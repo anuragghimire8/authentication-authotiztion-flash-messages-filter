@@ -2,6 +2,62 @@ var express = require('express');
 var router = express.Router();
 
 const userModel=require("./users")
+const passport=require("passport")
+
+
+//for registering 
+const localStrategy=require("passport-local");
+
+
+passport.use(new localStrategy(userModel.authenticate()));
+
+
+
+
+router.get("/profile",isLoggedIn,function(req,res){
+  res.render("profile");
+})
+
+router.post("/register",function(req,res){
+  var userdata=new userModel({
+    username:req.body.username,
+    secret:req.body.secret,
+  })
+
+  //user ko accountbanyo
+  userModel.register(userdata,req.body.password).then(function(registerreduser){
+
+  //user login bhayo 
+    passport.authenticate("local")(req,res,function(){
+      res.redirect("/profile");
+    })
+  })
+
+})
+
+ //for login 
+ router.post("/login", passport.authenticate("local", {
+  successRedirect: "/profile",
+  failureRedirect: "/login", // or any other route you want to redirect to on failure
+  failureFlash: true // if you're using flash messages for error handling
+}));
+
+ //for logot
+
+ router.get("/logout",function(req,res,next){
+   req.logout(function(err){
+    if(err) {return next(err);}
+    res.redirect("/")
+   });
+ });
+//isLoggedIn Middleware protettion 
+
+function isLoggedIn(req, res, next) { 
+  if (req.isAuthenticated() ) {
+    return next();
+  }
+  res.redirect('/');
+}
 
 /* GET home page. */
 router.get('/', function(req, res) {
@@ -18,7 +74,7 @@ router.get("/check" ,function(req,res){
   console.log(req.flash("age"),req.flash("name"));
   res.send("check garni backend ko terminal ma")
 })*/
-
+/*
 router.get("/create", async function(req,res){
         let userdata= await userModel.create({
           username:"anuragiiii",
